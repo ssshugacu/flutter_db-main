@@ -16,43 +16,66 @@ class _HomeState extends State<Home> {
   late String _userToDo;
   List<String> todoList = [];
 
-  Future<void> saveList(List<String> todoList) async {
-    const String apiUrl =
-        'https://2407-88-204-74-27.ngrok-free.app/task/all'; // URL
-    try {
-      final response = await http.post(Uri.parse(apiUrl), headers: {
+  Future<void> saveNote(String todo) async {
+  const String apiUrl = 'http://192.168.1.26:7000/task';
+  try {
+    final response = await http.post(
+      Uri.parse(apiUrl),
+      headers: {
         'Authorization':
-            'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NTc4NDQ0NjUyOWYwNGJmZWJlYzYxNzIiLCJpYXQiOjE3MDIzODA2MTQsImV4cCI6MTcwMjk4NTQxNH0.WUHP6l3MTc-Lh3yKnSC5ed0QcNt_XwvdpwWE8_xY-VM',
+            'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWFmNjU3MTFhYTFhMTExY2IxN2E3NWMiLCJpYXQiOjE3MDU5OTM1ODUsImV4cCI6MTcwNjU5ODM4NX0.NMZb0YDXmvIjs470Djmzs6eM-dyK-KqDqkiX5COGMUc',
         'Content-Type': 'application/json',
-      }, body: {
-        'todo': todoList
-      });
+      },
+      body: jsonEncode({'text': todo}),
+    );
 
-      if (response.statusCode == 200) {
-        print('Данные успешно сохранены');
-      } else {
-        print('Ошибка при сохранении данных: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Ошибка: $e');
+    if (response.statusCode == 200) {
+      print('Заметка успешно сохранена');
+    } else {
+      print('Ошибка при сохранении заметки: ${response.body}');
     }
+  } catch (e) {
+    print('Ошибка: $e');
   }
+}
+
+Future<void> saveList(List<String> todoList) async {
+  for (String todo in todoList) {
+    await saveNote(todo);
+  }
+}
 
   Future<void> getList() async {
     try {
-      const String apiUrl = 'https://2407-88-204-74-27.ngrok-free.app/task/all';
+      const String apiUrl = 'http://192.168.1.26:7000/task/all';
       final response = await http.get(
         Uri.parse(apiUrl),
         headers: {
           'Authorization':
-              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NTc4NDQ0NjUyOWYwNGJmZWJlYzYxNzIiLCJpYXQiOjE3MDIzODA2MTQsImV4cCI6MTcwMjk4NTQxNH0.WUHP6l3MTc-Lh3yKnSC5ed0QcNt_XwvdpwWE8_xY-VM',
+              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWFmNjU3MTFhYTFhMTExY2IxN2E3NWMiLCJpYXQiOjE3MDU5OTM1ODUsImV4cCI6MTcwNjU5ODM4NX0.NMZb0YDXmvIjs470Djmzs6eM-dyK-KqDqkiX5COGMUc',
           'Content-Type': 'application/json',
         },
       );
       if (response.statusCode == 200) {
         setState(() {
-          List<String> todo = jsonDecode(response.body)['todoList'];
-          todoList = todo;
+          print(response.body);
+          Map<String, dynamic> responseMap = jsonDecode(response.body);
+
+  List<String> namesList = [];
+
+  if (responseMap.containsKey('tasks')) {
+    List<dynamic> tasks = responseMap['tasks'];
+
+    for (var task in tasks) {
+      if (task.containsKey('name')) {
+        namesList.add(task['name']);
+      }
+    }
+  }
+
+  print(namesList);
+
+          todoList = namesList;
         });
       }
     } catch (e) {
@@ -60,50 +83,52 @@ class _HomeState extends State<Home> {
     }
   }
 
-  Future<void> deleteNote(int index) async {
-    const String apiUrl = 'https://2407-88-204-74-27.ngrok-free.app/task';
-    try {
-      final response = await http.delete(
-        Uri.parse('$apiUrl/$index'),
-        headers: {
-          'Authorization':
-              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NTc4NDQ0NjUyOWYwNGJmZWJlYzYxNzIiLCJpYXQiOjE3MDIzODA2MTQsImV4cCI6MTcwMjk4NTQxNH0.WUHP6l3MTc-Lh3yKnSC5ed0QcNt_XwvdpwWE8_xY-VM',
-          'Content-Type': 'application/json',
-        },
-      );
+  Future<void> deleteNote(int taskId) async {
+  const String apiUrl = 'http://192.168.1.26:7000/task/:taskId';
+  try {
+    final response = await http.delete(
+      Uri.parse('$apiUrl/$taskId'),
+      headers: {
+        'Authorization':
+            'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWFmNjU3MTFhYTFhMTExY2IxN2E3NWMiLCJpYXQiOjE3MDU5OTM1ODUsImV4cCI6MTcwNjU5ODM4NX0.NMZb0YDXmvIjs470Djmzs6eM-dyK-KqDqkiX5COGMUc',
+        'Content-Type': 'application/json',
+      },
+    );
 
-      if (response.statusCode == 200) {
-        getList();
-      } else {
-        print('Ошибка при удалении данных: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Ошибка: $e');
+    if (response.statusCode == 200) {
+      print('Заметка успешно удалена');
+    } else {
+      print('Ошибка при удалении заметки: ${response.statusCode}');
     }
+  } catch (e) {
+    print('Ошибка: $e');
   }
+}
 
-  Future<void> editNote(int index, String updatedTask) async {
-    const String apiUrl = 'https://2407-88-204-74-27.ngrok-free.app/task';
-    try {
-      final response = await http.put(
-        Uri.parse('$apiUrl/$index'),
-        headers: {
-          'Authorization':
-              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NTc4NDQ0NjUyOWYwNGJmZWJlYzYxNzIiLCJpYXQiOjE3MDIzODA2MTQsImV4cCI6MTcwMjk4NTQxNH0.WUHP6l3MTc-Lh3yKnSC5ed0QcNt_XwvdpwWE8_xY-VM',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({'todo': updatedTask}),
-      );
 
-      if (response.statusCode == 200) {
-        getList();
-      } else {
-        print('Ошибка при редактировании данных: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Ошибка: $e');
+  Future<void> editNote(int taskId, String updatedTask) async {
+  const String apiUrl = 'http://192.168.1.26:7000/task/:taskId';
+  try {
+    final response = await http.put(
+      Uri.parse('$apiUrl/$taskId'),
+      headers: {
+        'Authorization':
+            'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWFmNjU3MTFhYTFhMTExY2IxN2E3NWMiLCJpYXQiOjE3MDU5OTM1ODUsImV4cCI6MTcwNjU5ODM4NX0.NMZb0YDXmvIjs470Djmzs6eM-dyK-KqDqkiX5COGMUc',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'todo': updatedTask}),
+    );
+
+    if (response.statusCode == 200) {
+      print('Заметка успешно отредактирована');
+    } else {
+      print('Ошибка при редактировании заметки: ${response.statusCode}');
     }
+  } catch (e) {
+    print('Ошибка: $e');
   }
+}
+
 
   Route _settingsRoute(BuildContext context) {
     return MaterialPageRoute(
