@@ -15,39 +15,41 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   late String _userToDo;
   List<String> todoList = [];
+  String ip = "192.168.0.6";
+  List<dynamic> tasks = [];
 
   Future<void> saveNote(String todo) async {
-  const String apiUrl = 'http://192.168.1.26:7000/task';
-  try {
-    final response = await http.post(
-      Uri.parse(apiUrl),
-      headers: {
-        'Authorization':
-            'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWFmNjU3MTFhYTFhMTExY2IxN2E3NWMiLCJpYXQiOjE3MDU5OTM1ODUsImV4cCI6MTcwNjU5ODM4NX0.NMZb0YDXmvIjs470Djmzs6eM-dyK-KqDqkiX5COGMUc',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'text': todo}),
-    );
+    String apiUrl = 'http://$ip:7000/task';
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Authorization':
+              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWFmNjU3MTFhYTFhMTExY2IxN2E3NWMiLCJpYXQiOjE3MDU5OTM1ODUsImV4cCI6MTcwNjU5ODM4NX0.NMZb0YDXmvIjs470Djmzs6eM-dyK-KqDqkiX5COGMUc',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'text': todo}),
+      );
 
-    if (response.statusCode == 200) {
-      print('Заметка успешно сохранена');
-    } else {
-      print('Ошибка при сохранении заметки: ${response.body}');
+      if (response.statusCode == 200) {
+        print('Заметка успешно сохранена');
+      } else {
+        print('Ошибка при сохранении заметки: ${response.body}');
+      }
+    } catch (e) {
+      print('Ошибка: $e');
     }
-  } catch (e) {
-    print('Ошибка: $e');
   }
-}
 
-Future<void> saveList(List<String> todoList) async {
-  for (String todo in todoList) {
-    await saveNote(todo);
+  Future<void> saveList(List<String> todoList) async {
+    for (String todo in todoList) {
+      await saveNote(todo);
+    }
   }
-}
 
   Future<void> getList() async {
     try {
-      const String apiUrl = 'http://192.168.1.26:7000/task/all';
+      String apiUrl = 'http://$ip:7000/task/all';
       final response = await http.get(
         Uri.parse(apiUrl),
         headers: {
@@ -61,19 +63,19 @@ Future<void> saveList(List<String> todoList) async {
           print(response.body);
           Map<String, dynamic> responseMap = jsonDecode(response.body);
 
-  List<String> namesList = [];
+          List<String> namesList = [];
 
-  if (responseMap.containsKey('tasks')) {
-    List<dynamic> tasks = responseMap['tasks'];
+          if (responseMap.containsKey('tasks')) {
+            tasks = responseMap['tasks'];
 
-    for (var task in tasks) {
-      if (task.containsKey('name')) {
-        namesList.add(task['name']);
-      }
-    }
-  }
+            for (var task in tasks) {
+              if (task.containsKey('text')) {
+                namesList.add(task['text']);
+              }
+            }
+          }
 
-  print(namesList);
+          print(namesList);
 
           todoList = namesList;
         });
@@ -84,36 +86,40 @@ Future<void> saveList(List<String> todoList) async {
   }
 
   Future<void> deleteNote(int taskId) async {
-  const String apiUrl = 'http://192.168.1.26:7000/task/:taskId';
-  try {
-    final response = await http.delete(
-      Uri.parse('$apiUrl/$taskId'),
-      headers: {
-        'Authorization':
-            'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWFmNjU3MTFhYTFhMTExY2IxN2E3NWMiLCJpYXQiOjE3MDU5OTM1ODUsImV4cCI6MTcwNjU5ODM4NX0.NMZb0YDXmvIjs470Djmzs6eM-dyK-KqDqkiX5COGMUc',
-        'Content-Type': 'application/json',
-      },
-    );
+    String bdId = tasks[taskId]['_id'];
+    print(bdId);
+    String apiUrl = 'http://$ip:7000/task/$bdId';
+    print(taskId);
+    try {
+      final response = await http.delete(
+        Uri.parse(apiUrl),
+        headers: {
+          'Authorization':
+              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWFmNjU3MTFhYTFhMTExY2IxN2E3NWMiLCJpYXQiOjE3MDU5OTM1ODUsImV4cCI6MTcwNjU5ODM4NX0.NMZb0YDXmvIjs470Djmzs6eM-dyK-KqDqkiX5COGMUc',
+          'Content-Type': 'application/json',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      print('Заметка успешно удалена');
-    } else {
-      print('Ошибка при удалении заметки: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        print('Заметка успешно удалена');
+      } else {
+        print('Ошибка при удалении заметки: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Ошибка: $e');
     }
-  } catch (e) {
-    print('Ошибка: $e');
+    getList();
   }
-}
-
 
   Future<void> editNote(int taskId, String updatedTask) async {
-  const String apiUrl = 'http://192.168.1.26:7000/task/:taskId';
+  String bdId = tasks[taskId]['_id'];
+  String apiUrl = 'http://$ip:7000/task/$bdId';
   try {
-    final response = await http.put(
-      Uri.parse('$apiUrl/$taskId'),
+    final response = await http.patch(
+      Uri.parse(apiUrl),
       headers: {
         'Authorization':
-            'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWFmNjU3MTFhYTFhMTExY2IxN2E3NWMiLCJpYXQiOjE3MDU5OTM1ODUsImV4cCI6MTcwNjU5ODM4NX0.NMZb0YDXmvIjs470Djmzs6eM-dyK-KqDqkiX5COGMUc',
+            'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWFmNjU3MTFhYTFhMTExY2IxN2E3ёNWMiLCJpYXQiOjE3MDU5OTM1ODUsImV4cCI6MTcwNjU5ODM4NX0.NMZb0YDXmvIjs470Djmzs6eM-dyK-KqDqkiX5COGMUc',
         'Content-Type': 'application/json',
       },
       body: jsonEncode({'todo': updatedTask}),
@@ -121,6 +127,10 @@ Future<void> saveList(List<String> todoList) async {
 
     if (response.statusCode == 200) {
       print('Заметка успешно отредактирована');
+      setState(() {
+        todoList = [];
+      });
+      getList();
     } else {
       print('Ошибка при редактировании заметки: ${response.statusCode}');
     }
@@ -128,6 +138,8 @@ Future<void> saveList(List<String> todoList) async {
     print('Ошибка: $e');
   }
 }
+
+
 
 
   Route _settingsRoute(BuildContext context) {
@@ -153,22 +165,16 @@ Future<void> saveList(List<String> todoList) async {
           appBar: AppBar(
             actions: [
               IconButton(
-                icon: Icon(Icons.settings,
-                    color: themeProvider
-                        .currentTheme.appBarTheme.iconTheme?.color),
+                icon: Icon(Icons.settings, color: themeProvider.currentTheme.appBarTheme.iconTheme?.color),
                 onPressed: () {
                   Navigator.push(context, _settingsRoute(context));
                 },
               ),
             ],
-            backgroundColor:
-                themeProvider.currentTheme.appBarTheme.backgroundColor,
+            backgroundColor: themeProvider.currentTheme.appBarTheme.backgroundColor,
             bottomOpacity: 0.0,
             elevation: 0.0,
-            title: Text(themeProvider.getTodoListTitle(),
-                style: TextStyle(
-                    color:
-                        themeProvider.currentTheme.textTheme.bodyText2?.color)),
+            title: Text(themeProvider.getTodoListTitle(), style: TextStyle(color: themeProvider.currentTheme.textTheme.bodyText2?.color)),
             centerTitle: true,
           ),
           body: ListView.builder(
@@ -181,10 +187,7 @@ Future<void> saveList(List<String> todoList) async {
                   child: ListTile(
                     title: Text(
                       todoList[index],
-                      style: TextStyle(
-                          fontSize: 30,
-                          color: themeProvider
-                              .currentTheme.textTheme.bodyText1?.color),
+                      style: TextStyle(fontSize: 30, color: themeProvider.currentTheme.textTheme.bodyText1?.color),
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -209,51 +212,28 @@ Future<void> saveList(List<String> todoList) async {
                               builder: (BuildContext context) {
                                 String updatedTask = todoList[index];
                                 return AlertDialog(
-                                  backgroundColor: themeProvider
-                                      .currentTheme
-                                      .floatingActionButtonTheme
-                                      .backgroundColor,
+                                  backgroundColor: themeProvider.currentTheme.floatingActionButtonTheme.backgroundColor,
                                   title: Text(
                                     themeProvider.getEditingTodoListDialog(),
-                                    style: TextStyle(
-                                        color: themeProvider.currentTheme
-                                            .textTheme.bodyText1?.color),
+                                    style: TextStyle(color: themeProvider.currentTheme.textTheme.bodyText1?.color),
                                   ),
                                   content: TextField(
                                     onChanged: (String value) {
                                       updatedTask = value;
                                     },
-                                    controller: TextEditingController(
-                                        text: todoList[index]),
-                                    style: TextStyle(
-                                        color: themeProvider
-                                            .currentTheme
-                                            .textTheme
-                                            .bodyText1
-                                            ?.color), // Цвет текста в поле ввода
-                                    cursorColor: themeProvider.currentTheme
-                                            .textTheme.bodyText1?.color ??
-                                        Colors.white, // Цвет подсветки
+                                    controller: TextEditingController(text: todoList[index]),
+                                    style: TextStyle(color: themeProvider.currentTheme.textTheme.bodyText1?.color), // Цвет текста в поле ввода
+                                    cursorColor: themeProvider.currentTheme.textTheme.bodyText1?.color ?? Colors.white, // Цвет подсветки
                                     decoration: InputDecoration(
                                       focusedBorder: UnderlineInputBorder(
                                         borderSide: BorderSide(
-                                            color: themeProvider
-                                                    .currentTheme
-                                                    .textTheme
-                                                    .bodyText1
-                                                    ?.color ??
-                                                Colors
-                                                    .white), // Цвет подсветки при фокусе
+                                            color:
+                                                themeProvider.currentTheme.textTheme.bodyText1?.color ?? Colors.white), // Цвет подсветки при фокусе
                                       ),
                                       enabledBorder: UnderlineInputBorder(
                                         borderSide: BorderSide(
-                                            color: themeProvider
-                                                    .currentTheme
-                                                    .textTheme
-                                                    .bodyText1
-                                                    ?.color ??
-                                                Colors
-                                                    .white), // Цвет подсветки в статичном положении
+                                            color: themeProvider.currentTheme.textTheme.bodyText1?.color ??
+                                                Colors.white), // Цвет подсветки в статичном положении
                                       ),
                                     ),
                                   ),
@@ -267,17 +247,12 @@ Future<void> saveList(List<String> todoList) async {
                                         Navigator.of(context).pop();
                                       },
                                       child: Text(
-                                        themeProvider
-                                            .getEditingTodoListButton(),
-                                        style: TextStyle(
-                                            color: themeProvider.currentTheme
-                                                .textTheme.bodyText2?.color),
+                                        themeProvider.getEditingTodoListButton(),
+                                        style: TextStyle(color: themeProvider.currentTheme.textTheme.bodyText2?.color),
                                       ),
                                       style: ButtonStyle(
-                                        backgroundColor:
-                                            MaterialStateProperty.all<Color>(
-                                          themeProvider
-                                              .currentTheme.primaryColor,
+                                        backgroundColor: MaterialStateProperty.all<Color>(
+                                          themeProvider.currentTheme.primaryColor,
                                         ),
                                       ),
                                     ),
@@ -298,43 +273,31 @@ Future<void> saveList(List<String> todoList) async {
             },
           ),
           floatingActionButton: FloatingActionButton(
-            backgroundColor: themeProvider
-                .currentTheme.floatingActionButtonTheme.backgroundColor,
+            backgroundColor: themeProvider.currentTheme.floatingActionButtonTheme.backgroundColor,
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    backgroundColor: themeProvider
-                        .currentTheme.floatingActionButtonTheme.backgroundColor,
+                    backgroundColor: themeProvider.currentTheme.floatingActionButtonTheme.backgroundColor,
                     title: Text(
                       themeProvider.getAdditionTodoListDialog(),
-                      style: TextStyle(
-                          color: themeProvider
-                              .currentTheme.textTheme.bodyText1?.color),
+                      style: TextStyle(color: themeProvider.currentTheme.textTheme.bodyText1?.color),
                     ),
                     content: TextField(
                       onChanged: (String value) {
                         _userToDo = value;
                       },
-                      style: TextStyle(
-                          color: themeProvider.currentTheme.textTheme.bodyText1
-                              ?.color), // Цвет текста в поле ввода
-                      cursorColor: themeProvider.currentTheme.textTheme
-                          .bodyText1?.color, // Цвет подсветки
+                      style: TextStyle(color: themeProvider.currentTheme.textTheme.bodyText1?.color), // Цвет текста в поле ввода
+                      cursorColor: themeProvider.currentTheme.textTheme.bodyText1?.color, // Цвет подсветки
                       decoration: InputDecoration(
                         focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                              color: themeProvider.currentTheme.textTheme
-                                      .bodyText1?.color ??
-                                  Colors.white), // Цвет подсветки при фокусе
+                          borderSide:
+                              BorderSide(color: themeProvider.currentTheme.textTheme.bodyText1?.color ?? Colors.white), // Цвет подсветки при фокусе
                         ),
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(
-                              color: themeProvider.currentTheme.textTheme
-                                      .bodyText1?.color ??
-                                  Colors
-                                      .white), // Цвет подсветки в статичном положении
+                              color: themeProvider.currentTheme.textTheme.bodyText1?.color ?? Colors.white), // Цвет подсветки в статичном положении
                         ),
                       ),
                     ),
@@ -349,9 +312,7 @@ Future<void> saveList(List<String> todoList) async {
                         },
                         child: Text(
                           themeProvider.getAdditionTodoListButton(),
-                          style: TextStyle(
-                              color: themeProvider
-                                  .currentTheme.textTheme.bodyText2?.color),
+                          style: TextStyle(color: themeProvider.currentTheme.textTheme.bodyText2?.color),
                         ),
                         style: ButtonStyle(
                           backgroundColor: MaterialStateProperty.all<Color>(
@@ -364,10 +325,7 @@ Future<void> saveList(List<String> todoList) async {
                 },
               );
             },
-            child: Icon(Icons.add,
-                size: 30.0,
-                color: themeProvider
-                    .currentTheme.floatingActionButtonTheme.foregroundColor),
+            child: Icon(Icons.add, size: 30.0, color: themeProvider.currentTheme.floatingActionButtonTheme.foregroundColor),
           ),
         );
       },
