@@ -15,7 +15,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   late String _userToDo;
   List<String> todoList = [];
-  String ip = "192.168.0.6";
+  String ip = "192.168.1.26";
   List<dynamic> tasks = [];
 
   Future<void> saveNote(String todo) async {
@@ -76,7 +76,7 @@ class _HomeState extends State<Home> {
           }
 
           print(namesList);
-
+          todoList.clear();
           todoList = namesList;
         });
       }
@@ -112,35 +112,30 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> editNote(int taskId, String updatedTask) async {
-  String bdId = tasks[taskId]['_id'];
-  String apiUrl = 'http://$ip:7000/task/$bdId';
-  try {
-    final response = await http.patch(
-      Uri.parse(apiUrl),
-      headers: {
-        'Authorization':
-            'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWFmNjU3MTFhYTFhMTExY2IxN2E3ёNWMiLCJpYXQiOjE3MDU5OTM1ODUsImV4cCI6MTcwNjU5ODM4NX0.NMZb0YDXmvIjs470Djmzs6eM-dyK-KqDqkiX5COGMUc',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'todo': updatedTask}),
-    );
+    String bdId = tasks[taskId]['_id'];
+    print('edit id $bdId');
+    String apiUrl = 'http://$ip:7000/task/$bdId';
+    try {
+      final response = await http.patch(
+        Uri.parse(apiUrl),
+        headers: {
+          'Authorization':
+              'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWFmNjU3MTFhYTFhMTExY2IxN2E3NWMiLCJpYXQiOjE3MDU5OTM1ODUsImV4cCI6MTcwNjU5ODM4NX0.NMZb0YDXmvIjs470Djmzs6eM-dyK-KqDqkiX5COGMUc',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'text': updatedTask}),
+      );
 
-    if (response.statusCode == 200) {
-      print('Заметка успешно отредактирована');
-      setState(() {
-        todoList = [];
-      });
-      getList();
-    } else {
-      print('Ошибка при редактировании заметки: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        print('Заметка успешно отредактирована');
+        getList();
+      } else {
+        print('Ошибка при редактировании заметки: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Ошибка: $e');
     }
-  } catch (e) {
-    print('Ошибка: $e');
   }
-}
-
-
-
 
   Route _settingsRoute(BuildContext context) {
     return MaterialPageRoute(
@@ -242,7 +237,10 @@ class _HomeState extends State<Home> {
                                       onPressed: () {
                                         setState(() {
                                           todoList[index] = updatedTask;
-                                          saveList(todoList);
+                                          print('todoList[index] ${todoList[index]}');
+                                          // saveList(todoList); // ХУЙНЯ КРИВАЯ
+                                          editNote(index, updatedTask);
+                                          print('index $index | updatedTask $updatedTask');
                                         });
                                         Navigator.of(context).pop();
                                       },
@@ -306,7 +304,8 @@ class _HomeState extends State<Home> {
                         onPressed: () {
                           setState(() {
                             todoList.add(_userToDo);
-                            saveList(todoList);
+                            // saveList(todoList); // ХУЙНЯ КРИВАЯ
+                            saveNote(_userToDo);
                           });
                           Navigator.of(context).pop();
                         },
